@@ -4,6 +4,9 @@ using System.Collections;
 using UnityEngine;
 using Unity.VisualScripting;
 
+
+/// - ป้องกันไม่ให้ไอเท็มวางให้แน่นหรือใกล้กันมากเกินไป
+/// - ตรวจสอบว่าไม่มีการปิดกั้นเส้นทางระหว่างผู้เล่นและทางออก
 public class MapGenerator : MonoBehaviour
 {
     [Header("Map Size")]
@@ -72,6 +75,9 @@ public class MapGenerator : MonoBehaviour
         StartCoroutine(SetupMap());
     }
 
+    
+    ///วาง NPC เหนือผู้เล่น
+    ///วางสัตว์ประสาด ผนัง และผลไม้ (ตามลำดับ)
     IEnumerator SetupMap()
     {
         SetUpPlayer();
@@ -111,6 +117,7 @@ public class MapGenerator : MonoBehaviour
         yield return null;
     }
 
+    
     private void CreateMap()
     {
         mapdata = new Identity[X, Y];
@@ -138,6 +145,7 @@ public class MapGenerator : MonoBehaviour
         }
     }
 
+    
     public Identity GetMapData(float x, float y)
     {
         if (x >= X || x < 0 || y >= Y || y < 0)
@@ -148,6 +156,8 @@ public class MapGenerator : MonoBehaviour
         return mapdata[(int)x, (int)y];
     }
 
+    
+    /// ใช้ป้องกันวางผนังที่จะปิดกั้นทางระหว่างผู้เล่นและทางออก
     private bool IsPathAvailable(Vector2Int start, Vector2Int goal, Vector2Int simulatedBlockedPos)
     {
         if (start.x < 0 || goal.x < 0) return false;
@@ -191,6 +201,7 @@ public class MapGenerator : MonoBehaviour
     }
 
 
+    ///วางไอเท็มแบบกระจายทั่วแผนที่แต่ไม่ให้ติดกับผู้เล่นและทางออก
     private void PlaceItemsOnMap(int count, GameObject[] prefab, Transform parent, string itemType, System.Action onComplete = null)
     {
         int placedCount = 0;
@@ -290,6 +301,7 @@ public class MapGenerator : MonoBehaviour
         onComplete?.Invoke();
     }
 
+    
     public void SetUpItem(int x, int y, GameObject[] _itemsPrefab, Transform parrent, string _name)
     {
         int r = Random.Range(0, _itemsPrefab.Length);
@@ -309,6 +321,7 @@ public class MapGenerator : MonoBehaviour
         }
         obj.name = $"Object_{mapdata[x, y].Name} {x}, {y}";
     }
+    
     public void SetUpItem(int x, int y, GameObject _itemsPrefab, Transform parrent, string _name)
     {
         _itemsPrefab.transform.parent = parrent;
@@ -326,6 +339,8 @@ public class MapGenerator : MonoBehaviour
         }
         _itemsPrefab.name = $"Object_{mapdata[x, y].Name} {x}, {y}";
     }
+    
+    
     private void SetUpPlayer()
     {
         player.mapGenerator = this;
