@@ -100,3 +100,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9fe3764c22c417340987c4da063887ba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  Name: 
+  positionX: 0
+  positionY: 0
+  mapGenerator: {fileID: 0}
+  staminaDamage: 10
+  attacksRemaining: 1

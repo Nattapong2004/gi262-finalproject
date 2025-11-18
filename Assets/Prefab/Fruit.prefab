@@ -104,3 +104,4 @@ MonoBehaviour:
   positionX: 0
   positionY: 0
   mapGenerator: {fileID: 0}
+  staminaRecovery: 5

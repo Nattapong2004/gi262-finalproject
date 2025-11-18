@@ -29,7 +29,7 @@ public class MapGenerator : MonoBehaviour
     public GameObject[] fruitPrefab;
     public GameObject[] exitPrefab;
     public GameObject[] npcPrefab;
-    
+    public GameObject[] obstructionPrefab;
 
     [Header("Parent Objects")]
     public Transform floorParent;
@@ -38,11 +38,11 @@ public class MapGenerator : MonoBehaviour
     public Transform fruitParent;
     public Transform exitParent;
     public Transform npcParent;
-    
+    public Transform obstructionParent;
 
     [Header("Monster Settings")]
     public int monsterCount = 5;
-    public int wallCount = 5;
+    public int obstructionCount = 5;
     public int fruitCount = 3;
     [Tooltip("Minimum Chebyshev distance between fruits (1 = no adjacent fruits)")]
     public int fruitMinDistance = 1;
@@ -62,6 +62,7 @@ public class MapGenerator : MonoBehaviour
     [HideInInspector] public string fruit = "fruit";
     [HideInInspector] public string exit = "exit";
     [HideInInspector] public string npc = "npc";
+    [HideInInspector] public string obstruction = "obstruction";
     
 
     private void Awake()
@@ -111,7 +112,7 @@ public class MapGenerator : MonoBehaviour
         }
 
         PlaceItemsOnMap(monsterCount, monsterPrefab, monsterParent, monster);
-        PlaceItemsOnMap(wallCount, wallsPrefab, wallParent, wall);
+        PlaceItemsOnMap(obstructionCount, obstructionPrefab, obstructionParent, obstruction);
         PlaceItemsOnMap(fruitCount, fruitPrefab, fruitParent, fruit);
 
         yield return null;
@@ -132,6 +133,12 @@ public class MapGenerator : MonoBehaviour
                     GameObject obj = Instantiate(wallsPrefab[r], new Vector3(x, y, 0), Quaternion.identity);
                     obj.transform.parent = wallParent;
                     obj.name = $"Wall_{x},{y}";
+                    // Walls should render below obstructions: set sorting order to 0
+                    var wallRenderers = obj.GetComponentsInChildren<SpriteRenderer>();
+                    foreach (var sr in wallRenderers)
+                    {
+                        sr.sortingOrder = 0;
+                    }
                 }
                 else
                 {
@@ -139,9 +146,27 @@ public class MapGenerator : MonoBehaviour
                     GameObject obj = Instantiate(floorsPrefab[r], new Vector3(x, y, 1), Quaternion.identity);
                     obj.transform.parent = floorParent;
                     obj.name = $"Floor_{x},{y}";
+                    // Floors render behind walls/objects
+                    var floorRenderers = obj.GetComponentsInChildren<SpriteRenderer>();
+                    foreach (var sr in floorRenderers)
+                    {
+                        sr.sortingOrder = -10;
+                    }
                     mapdata[x, y] = null;
                 }
             }
+        }
+    }
+
+    // Set the sprite sorting order so that obstructions on lower rows render above upper rows.
+    // We compute order = baseOrder + ((Y - 1) - y) so y=0 (bottom) gets highest order.
+    private void SetSortingOrderByRow(GameObject obj, int y, int baseOrder = 1)
+    {
+        var renderers = obj.GetComponentsInChildren<SpriteRenderer>();
+        int order = baseOrder + ((Y - 1) - y);
+        foreach (var sr in renderers)
+        {
+            sr.sortingOrder = order;
         }
     }
 
@@ -249,8 +274,20 @@ public class MapGenerator : MonoBehaviour
                 }
             }
 
+            // ตรวจสอบว่า obstruction (monster/fruit) ไม่ปิดทางไป exit
+            if ((itemType == monster || itemType == fruit || itemType == obstruction) && exitPos.x >= 0 && exitPos.y >= 0)
+            {
+                if (!IsPathAvailable(playerStartPos, exitPos, new Vector2Int(x, y)))
+                {
+                    continue;
+                }
+            }
+
             if (itemType == fruit)
             {
+                // ตรวจสอบว่าตำแหน่งมีเพื่อนบ้านที่สามารถเดินผ่านได้ (ไม่ใช่พื้นที่โล่ง)
+                if (!HasAccessibleNeighbor(x, y)) continue;
+
                 bool tooClose = false;
                 for (int nx = x - fruitMinDistance; nx <= x + fruitMinDistance && !tooClose; nx++)
                 {
@@ -271,6 +308,9 @@ public class MapGenerator : MonoBehaviour
 
             if (itemType == monster)
             {
+                // ตรวจสอบว่าตำแหน่งมีเพื่อนบ้านที่สามารถเดินผ่านได้ (ไม่ใช่พื้นที่โล่ง)
+                if (!HasAccessibleNeighbor(x, y)) continue;
+
                 bool tooCloseM = false;
                 for (int nx = x - monsterMinDistance; nx <= x + monsterMinDistance && !tooCloseM; nx++)
                 {
@@ -301,6 +341,32 @@ public class MapGenerator : MonoBehaviour
         onComplete?.Invoke();
     }
 
+    /// <summary>
+    /// HasAccessibleNeighbor - ตรวจสอบว่าตำแหน่งมีเพื่อนบ้านที่เดินผ่านได้ (ลีกเลี่ยงพื้นที่โล่ง)
+    /// </summary>
+    private bool HasAccessibleNeighbor(int x, int y)
+    {
+        int[] dx = { -1, 1, 0, 0 };
+        int[] dy = { 0, 0, -1, 1 };
+
+        for (int i = 0; i < 4; i++)
+        {
+            int nx = x + dx[i];
+            int ny = y + dy[i];
+
+            if (nx < 0 || ny < 0 || nx >= X || ny >= Y) continue;
+
+            Identity neighbor = mapdata[nx, ny];
+            // ถือว่า "สามารถเดินผ่านได้" ถ้าเป็น empty หรือ collectItem (fruit) หรือ npc
+            if (neighbor == null || neighbor.Name == fruit || neighbor.Name == npc || neighbor.Name == exit)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     
     public void SetUpItem(int x, int y, GameObject[] _itemsPrefab, Transform parrent, string _name)
     {
@@ -320,6 +386,10 @@ public class MapGenerator : MonoBehaviour
             monstersOnMap.Add(obj.GetComponent<Monster>());
         }
         obj.name = $"Object_{mapdata[x, y].Name} {x}, {y}";
+
+        // Ensure obstructions (monster, fruit, npc, exit, etc.) render according to row
+        // walls/floors are already assigned sortingOrder in CreateMap
+        SetSortingOrderByRow(obj, y, 1);
     }
     
     public void SetUpItem(int x, int y, GameObject _itemsPrefab, Transform parrent, string _name)
@@ -338,6 +408,9 @@ public class MapGenerator : MonoBehaviour
             monstersOnMap.Add(_itemsPrefab.GetComponent<Monster>());
         }
         _itemsPrefab.name = $"Object_{mapdata[x, y].Name} {x}, {y}";
+
+        // Set sorting order for the existing GameObject according to its row
+        SetSortingOrderByRow(_itemsPrefab, y, 1);
     }
     
     
