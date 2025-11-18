@@ -50,6 +50,9 @@ public class Player : Identity
 
     void Update()
     {
+        // ถ้าเกมถูก pause โดย DialogueUI (Time.timeScale == 0) ให้หยุดการรับ input สำหรับการเดิน
+        if (Time.timeScale == 0f) return;
+
         HandleMovement();
     }
 

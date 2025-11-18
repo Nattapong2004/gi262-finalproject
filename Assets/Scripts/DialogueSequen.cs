@@ -10,7 +10,17 @@ public class DialogueSequen : MonoBehaviour
 
     public void Start()
     {
+        // พยายามหา DialogueUI: ถ้า DialogueSequen อยู่บนตัว NPC อาจไม่มี DialogueUI บน GameObject เดียวกัน
         dialogueUI = GetComponent<DialogueUI>(); // หรือกำหนดผ่าน Inspector
+        if (dialogueUI == null)
+        {
+            dialogueUI = FindAnyObjectByType<DialogueUI>();
+            if (dialogueUI != null)
+            {
+                Debug.Log("DialogueSequen: พบ DialogueUI ในซีน และจะใช้โดยอัตโนมัติ");
+            }
+        }
+
         LoadConversations();
     }
 
@@ -38,7 +48,7 @@ public class DialogueSequen : MonoBehaviour
         //             |
         //             +-- NPC: ขอให้ได้เจอแม่นะเจ้าหนู
 
-        // 3. Create the dialogue nodes
+        // 3. สร้าง Dialogue Node (โหนดของบทสนทนา)
         DialogueNode greeting = new DialogueNode("โอ้! สวัสดีเพื่อนยาก นายดูสับสนนะ มีอะไรจะถามฉันไหม?");
         DialogueNode askForWin = new DialogueNode("ง่ายมาก นายก็แค่วิ่งไปทางขวาเรื่อย ๆ แม่นายอาจจะรออยู่ปลายทางด้านบนก็ได้");
         DialogueNode askForLost = new DialogueNode("นายเหลือเวลาไม่มากแล้ว อาจจะไม่ได้เจอแม่นายอีกก็ได้ ทุกครั้งที่เดินนายจะหมดแรง(Stamina:-1)คิดให้ดีทุกครั้งก่อนจะเดิน แต่อย่าชักช้าละ");
@@ -46,8 +56,7 @@ public class DialogueSequen : MonoBehaviour
         DialogueNode askForBarrier = new DialogueNode("มันคือหมอกแห่งความตาย นายไม่รู้หรอกว่าความตายคืออะไร แต่มันจะพรากนายไปจากแม่ของนาย มันจะไล่ตามนายมาเรื่อย ๆ วิ่งหนีเร็ว ๆ ละ");
         DialogueNode goodbye = new DialogueNode("ขอให้ได้เจอแม่นะเจ้าหนู");
 
-        // Build the tree, adding custom responses
-        // 4. Build the tree, adding custom responses ...
+        // 4. สร้างโครงสร้างต้นไม้บทสนทนา และเพิ่มคำตอบ/เส้นทางต่าง ๆ
 
         greeting.AddNext(askForWin, "ผมอยากไปหาแม่ฮะ? พี่รู้ทางไหม?");
         greeting.AddNext(askForLost, "แล้วถ้าผมหลงทางละฮะ?");
@@ -55,7 +64,7 @@ public class DialogueSequen : MonoBehaviour
         greeting.AddNext(askForBarrier, "หมอกฝั่งซ้ายคืออะไรหรอฮะ?");
         greeting.AddNext(goodbye, "ขอบคุณมากฮะ");
 
-        // 5. Set up the root of the dialogue tree
+        // 5. ตั้งค่า root ของต้นไม้บทสนทนา
         tree = new DialogueTree(greeting);
     }
 
@@ -72,16 +81,23 @@ public class DialogueSequen : MonoBehaviour
             currentNode = currentNode.nexts[choiceKey];
 
             // 2. ตรวจสอบว่ามีตัวเลือกถัดไปหรือไม่ (จบการสนทนา)
+            // หาตัว DialogueUI ที่จะใช้แสดง หากฟิลด์ยังเป็น null ให้ลองหาในซีน
+            DialogueUI targetUI = dialogueUI ?? FindAnyObjectByType<DialogueUI>();
+            if (targetUI == null)
+            {
+                Debug.LogWarning("DialogueSequen: ไม่พบ DialogueUI สำหรับอัปเดตบทสนทนา");
+                return;
+            }
+
             if (currentNode.nexts.Count > 0)
             {
-                dialogueUI.ShowDialogue(currentNode); // แสดง Node ถัดไป
+                targetUI.ShowDialogue(currentNode); // แสดง Node ถัดไป
             }
             else
             {
                 // ถ้าไม่มีตัวเลือกถัดไป ถือว่าจบบทสนทนา
-                dialogueUI.ShowDialogue(currentNode);   // แสดงข้อความสุดท้าย
-                dialogueUI.ShowCloseButtonDialog();    // อาจเพิ่ม Delay และเรียก dialogueUI.HideDialogue() ที่นี่
-                                                      // หรือทำให้ปุ่ม "ปิด" แสดงขึ้นมา
+                targetUI.ShowDialogue(currentNode);   // แสดงข้อความสุดท้าย
+                targetUI.ShowCloseButtonDialog();    // แสดงปุ่มปิดบทสนทนา
             }
         }
     }

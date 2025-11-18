@@ -23,7 +23,7 @@ public GameObject staminaBar;
 
     void Update()
     {
-        staminaBar.transform.localScale = new Vector3(attacksRemaining * 0.2f, 0.2f, 0.2f);
+        staminaBar.transform.localScale = new Vector3(attacksRemaining * 0.4f, 0.4f, 0.4f);
     }
 
     /// <summary>

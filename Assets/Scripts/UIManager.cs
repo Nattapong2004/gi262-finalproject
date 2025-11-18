@@ -121,6 +121,23 @@ public class UIManager : MonoBehaviour
     }
 
     /// <summary>
+    /// SetStaminaUIActive - แสดงหรือซ่อนส่วน UI ของ Stamina อย่างปลอดภัย
+    /// ใช้โดยระบบอื่น ๆ (เช่น DialogueUI) เพื่อซ่อน stamina ขณะแสดง dialogue
+    /// </summary>
+    public void SetStaminaUIActive(bool visible)
+    {
+        if (staminaText != null)
+        {
+            staminaText.gameObject.SetActive(visible);
+        }
+
+        if (staminaBar != null)
+        {
+            staminaBar.gameObject.SetActive(visible);
+        }
+    }
+
+    /// <summary>
     /// GameOver - เมื่อเกมจบ (stamina หมด)
     /// </summary>
     private void GameOver()
