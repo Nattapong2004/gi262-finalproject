@@ -105,9 +105,9 @@ public class UIManager : MonoBehaviour
     }
 
     /// <summary>
-    /// HideStaminaUI - ซ่อน UI stamina (เมื่อเกมจบ)
+    /// HideStaminaUI - ซ่อน UI stamina (เมื่อเกมจบ) (public เพื่อให้เรียกจาก Dialogue/อื่น ๆ ได้)
     /// </summary>
-    private void HideStaminaUI()
+    public void HideStaminaUI()
     {
         if (staminaText != null)
         {
@@ -121,19 +121,18 @@ public class UIManager : MonoBehaviour
     }
 
     /// <summary>
-    /// SetStaminaUIActive - แสดงหรือซ่อนส่วน UI ของ Stamina อย่างปลอดภัย
-    /// ใช้โดยระบบอื่น ๆ (เช่น DialogueUI) เพื่อซ่อน stamina ขณะแสดง dialogue
+    /// ShowStaminaUI - แสดง UI stamina (เรียกเมื่อปิดบทสนทนา)
     /// </summary>
-    public void SetStaminaUIActive(bool visible)
+    public void ShowStaminaUI()
     {
         if (staminaText != null)
         {
-            staminaText.gameObject.SetActive(visible);
+            staminaText.gameObject.SetActive(true);
         }
 
         if (staminaBar != null)
         {
-            staminaBar.gameObject.SetActive(visible);
+            staminaBar.gameObject.SetActive(true);
         }
     }
 
