@@ -55,6 +55,7 @@ public class DialogueUI : MonoBehaviour
             string choiceText = choies[i];
             CreateChoiceButton(choiceText,i);
         }
+        dialoguePanel.SetActive(true);
    
     }
 
@@ -102,5 +103,7 @@ public class DialogueUI : MonoBehaviour
         {
             uiManager.ShowStaminaUI();
         }
+        gameObject.SetActive(false);
+
     }
 }
