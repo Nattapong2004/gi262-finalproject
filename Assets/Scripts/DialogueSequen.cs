@@ -11,6 +11,9 @@ public class DialogueSequen : MonoBehaviour
     public void Start()
     {
         LoadConversations();
+        currentNode = tree.root;
+
+       
     }
 
     private void LoadConversations()
